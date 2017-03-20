@@ -1,0 +1,27 @@
+# regarding downgrading to lts-6.30, see #217.
+
+resolver: lts-7.1
+compiler: ghcjs-0.2.1.9007001_ghc-8.0.1
+compiler-check: match-exact
+# for custom ghcjs compilers, set version like this:
+# ghcjs-`ghcjs --numeric-version`_ghc-`ghcjs --numeric-ghc-version`
+
+packages:
+- '.'
+
+extra-deps:
+- aeson-extra-0.4.0.0
+- basic-sop-0.2.0.0
+- functor-infix-0.0.4
+- json-sop-0.2.0.1
+- lens-sop-0.2.0.1
+- react-flux-1.2.3
+- recursion-schemes-5.0.1
+- string-0.4.0
+
+setup-info:
+  ghcjs:
+    source:
+      ghcjs-0.2.1.9007001_ghc-8.0.1:
+        url: http://tolysz.org/ghcjs/ghc-8.0-2016-09-26-lts-7.1-9007001-mem.tar.gz
+        sha1: e640724883238593e2d2f7f03991cb413ec0347b
