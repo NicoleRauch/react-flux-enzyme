@@ -20,6 +20,7 @@ extra-deps:
 - basic-sop-0.2.0.0
 - functor-infix-0.0.4
 - json-sop-0.2.0.1
+- language-css-0.0.3
 - lens-sop-0.2.0.1
 - react-hs-0.0.1
 - recursion-schemes-5.0.1

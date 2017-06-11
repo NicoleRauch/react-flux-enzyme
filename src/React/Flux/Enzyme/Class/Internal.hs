@@ -1,8 +1,11 @@
+{-# LANGUAGE CPP                        #-}
+
 module React.Flux.Enzyme.Class.Internal where
 
+
+import Data.JSString (pack)
 import GHCJS.Marshal.Pure
 import GHCJS.Types (JSString, JSVal)
-import React.Flux.Internal (toJSString)
 
 import React.Flux.Enzyme.Core
 
@@ -10,6 +13,9 @@ import React.Flux.Enzyme.Core
 -- | This type class allows to define different wrappers
 class PFromJSVal a => EnzymeWrapper a where
   unWrap :: a -> JSVal
+
+  consoleLogWrapper :: JSString -> a -> IO ()
+  consoleLogWrapper msg = js_console_log_jsval msg . unWrap
 
 
 -- * The Enzyme API that is available for all wrappers
@@ -140,37 +146,38 @@ lengthOfIO :: EnzymeWrapper w => IO w -> IO Int
 lengthOfIO wrapper = lengthOf =<< wrapper
 
 
-{-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
-
 -- * Preparations for the evaluation of functions in JavaScript
 
 execWithSelector :: (PFromJSVal a, EnzymeWrapper w) => String -> w -> EnzymeSelector -> IO a
-execWithSelector func wrapper es@(PropertySelector _) = pFromJSVal <$> js_exec_with_object (toJSString func) (unWrap wrapper) (pToJSVal es)
+execWithSelector func wrapper es@(PropertySelector _) = pFromJSVal <$> js_exec_with_object (pack func) (unWrap wrapper) (pToJSVal es)
+execWithSelector func wrapper es@(StyleSelector _) = pFromJSVal <$> js_exec_with_object (pack func) (unWrap wrapper) (pToJSVal es)
 execWithSelector f w e = execWith1Arg f w e
 
 execWith1Arg :: (PFromJSVal a, PToJSVal b, EnzymeWrapper w) => String -> w -> b -> IO a
-execWith1Arg func wrapper arg = pFromJSVal <$> js_exec_with_1_arg (toJSString func) (unWrap wrapper) (pToJSVal arg)
+execWith1Arg func wrapper arg = pFromJSVal <$> js_exec_with_1_arg (pack func) (unWrap wrapper) (pToJSVal arg)
 
 exec :: (PFromJSVal a, EnzymeWrapper w) => String -> w -> IO a
-exec func wrapper = pFromJSVal <$> js_exec (toJSString func) (unWrap wrapper)
+exec func wrapper = pFromJSVal <$> js_exec (pack func) (unWrap wrapper)
 
 attr :: (PFromJSVal a, EnzymeWrapper w) => String -> w -> IO a
-attr name wrapper = pFromJSVal <$> js_attr (toJSString name) (unWrap wrapper)
+attr name wrapper = pFromJSVal <$> js_attr (pack name) (unWrap wrapper)
 
 
 -- * The actual JavaScript calls
 
-foreign import javascript unsafe
-    "$2[$1]()"
-    js_exec :: JSString -> JSVal -> IO JSVal
+#ifdef __GHCJS__
 
 foreign import javascript unsafe
-    "$2[$1]"
-    js_attr :: JSString -> JSVal -> IO JSVal
+  "$2[$1]()"
+  js_exec :: JSString -> JSVal -> IO JSVal
 
 foreign import javascript unsafe
-    "$2[$1]($3)"
-    js_exec_with_1_arg :: JSString -> JSVal -> JSVal -> IO JSVal
+  "$2[$1]"
+  js_attr :: JSString -> JSVal -> IO JSVal
+
+foreign import javascript unsafe
+  "$2[$1]($3)"
+  js_exec_with_1_arg :: JSString -> JSVal -> JSVal -> IO JSVal
 
 -- | Log objects that have no 'PToJSVal' instance, but a 'ToJSON' instance, and thus can be
 -- conveniently turned into a JSString.  (This is neither efficient nor pretty, but arguably it's
@@ -178,11 +185,35 @@ foreign import javascript unsafe
 --
 -- TODO: should the third argument be 'JSString'?  or should we remove this entirely?
 foreign import javascript unsafe
-    "$2[$1](JSON.parse($3))"
-    js_exec_with_object :: JSString -> JSVal -> JSVal -> IO JSVal
+  "$2[$1](JSON.parse($3))"
+  js_exec_with_object :: JSString -> JSVal -> JSVal -> IO JSVal
 
 -- | Write a 'JSVal' to stdout (node) or the console (browser). Should only be used for logging wrapped JavaScript objects.
 -- The first parameter can be used to briefly describe the log output.
 foreign import javascript unsafe
   "console.log($1, $2);"
   js_console_log_jsval :: JSString -> JSVal -> IO ()
+
+#else
+
+{-# ANN js_exec ("HLint: ignore Use camelCase" :: String) #-}
+js_exec :: JSString -> JSVal -> IO JSVal
+js_exec = error "javascript FFI not available in GHC"
+
+{-# ANN js_attr ("HLint: ignore Use camelCase" :: String) #-}
+js_attr :: JSString -> JSVal -> IO JSVal
+js_attr = error "javascript FFI not available in GHC"
+
+{-# ANN js_exec_with_1_arg ("HLint: ignore Use camelCase" :: String) #-}
+js_exec_with_1_arg :: JSString -> JSVal -> JSVal -> IO JSVal
+js_exec_with_1_arg = error "javascript FFI not available in GHC"
+
+{-# ANN js_exec_with_object ("HLint: ignore Use camelCase" :: String) #-}
+js_exec_with_object :: JSString -> JSVal -> JSVal -> IO JSVal
+js_exec_with_object = error "javascript FFI not available in GHC"
+
+{-# ANN js_console_log_jsval ("HLint: ignore Use camelCase" :: String) #-}
+js_console_log_jsval :: JSString -> JSVal -> IO ()
+js_console_log_jsval = error "javascript FFI not available in GHC"
+
+#endif

@@ -19,7 +19,9 @@ library
   build-depends:
       aeson
     , base >= 4.7 && < 5
+    , bytestring
     , ghcjs-base
+    , language-css
     , react-hs
     , string-conversions
   exposed-modules:

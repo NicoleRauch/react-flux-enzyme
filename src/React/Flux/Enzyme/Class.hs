@@ -38,6 +38,7 @@ module React.Flux.Enzyme.Class
  , typeOf
  , lengthOf
  , lengthOfIO
+ , consoleLogWrapper
  ) where
 
 import React.Flux.Enzyme.Class.Internal

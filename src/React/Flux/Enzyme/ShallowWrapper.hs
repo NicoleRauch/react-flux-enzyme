@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -27,9 +28,6 @@ module React.Flux.Enzyme.ShallowWrapper
   -- * Enzyme functions on a ShallowWrapper
   , shallowChild -- known as "shallow" in Enzyme
   , module R
-
-  -- * helper functions
-  , consoleLogShallowWrapper
   ) where
 
 import GHCJS.Marshal.Pure
@@ -49,8 +47,6 @@ instance PFromJSVal ShallowWrapper where pFromJSVal = ShallowWrapper
 instance EnzymeWrapper ShallowWrapper where unWrap = _unShallowWrapper
 
 
-{-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
-
 -- * Functions that only exist for ShallowWrapper.
 
 shallow :: ReactElementM eventHandler () -> IO ShallowWrapper
@@ -68,9 +64,16 @@ shallowChild = exec "shallow"
 
 -- * Helper functions.
 
-consoleLogShallowWrapper :: JSString -> ShallowWrapper -> IO ()
-consoleLogShallowWrapper msg (ShallowWrapper jsval) = js_console_log_jsval msg jsval
+#ifdef __GHCJS__
 
 foreign import javascript unsafe
   "enzyme.shallow($1)"
   js_shallow :: ReactElementRef -> IO JSVal
+
+#else
+
+{-# ANN js_shallow ("HLint: ignore Use camelCase" :: String) #-}
+js_shallow :: ReactElementRef -> IO JSVal
+js_shallow = error "javascript FFI not available in GHC"
+
+#endif
